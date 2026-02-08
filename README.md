@@ -1,4 +1,4 @@
-# CRC-32 CLI ![Build](https://img.shields.io/github/actions/workflow/status/moomurrs/CRC-32-CLI/dotnet.yml?branch=master&style=flat&logo=github) ![Test](https://img.shields.io/github/actions/workflow/status/moomurrs/CRC-32-CLI/dotnet.yml?branch=master&style=flat&logo=github)
+# CRC-32 CLI ![Build](https://img.shields.io/github/actions/workflow/status/moomurrs/CRC-32-CLI/dotnet.yml?branch=master&style=flat&logo=github) ![Tests](https://img.shields.io/github/actions/workflow/status/moomurrs/CRC-32-CLI/dotnet.yml?branch=master&style=flat&logo=github)
 
 
 
