@@ -25,4 +25,4 @@ jobs:
     - name: Build
       run: dotnet build --no-restore
     - name: Test
-      run: dotnet test CRC-32-CLI.sln --verbosity
+      run: dotnet test CRC-32-CLI.sln
