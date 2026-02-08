@@ -7,7 +7,7 @@ namespace CRC_32_CLI {
     internal class Program {
         static void Main(string[] args) {
 
-            if (args.Length == 0 || (args.Length == 1 && args[0] == "--help")) {
+            if (args.Length == 0 || (args.Length == 1 && (args[0] == "--help" || args[0] == "-h"))) {
 
                 showHelp();
 
@@ -21,72 +21,66 @@ namespace CRC_32_CLI {
 
             // input: text or file name
             // direction: "forward" or "reverse"
+            // view: "hex" or "dec"
             Dictionary<string, string> inputs = new Dictionary<string, string>();
 
             int i = 0;
 
-            while (i < args.Length - 1) {
-                string flag = args[i].ToLower();
-                string value = args[i + 1];
+            while (i < args.Length) {
+                string sw = args[i].ToLower();
 
-                if (flag == "--text" || flag == "-t") {
+                if (i == 0 && !(sw == "--text" || sw == "-t" || sw == "--forward" || sw == "-f" || sw == "--decimal" || sw == "-d")) {
+                    // assuming file mode
+                    string fileName = sw;
+
+                    inputs.Add("input", "./" + fileName);
+                    i += 1;
+                } else if (sw == "--text" || sw == "-t") {
+                    // string mode specified
                     if (inputs.ContainsKey("input")) {
                         // error: input already set
                         showHelp();
                         return;
                     }
+                    string value = args[i + 1];
                     inputs.Add("input", value);
                     i += 2;
 
-                } else if (flag == "--file" || flag == "-t") {
-                    if (inputs.ContainsKey("input")) {
-                        // error: input already set
-                        showHelp();
-                        return;
-                    }
-                    inputs.Add("input", "./" + value);
-                    i += 2;
-
-                } else if (flag == "--direction" || flag == "-d") {
+                } else if (sw == "--forward" || sw == "-f") {
+                    // forward divisor specified
                     if (inputs.ContainsKey("direction")) {
                         // error: input already set
                         showHelp();
                         return;
                     }
 
-                    if (!(value == "forward" || value == "reverse")) {
-                        // error: direction not a valid value
-                        showHelp();
-                        return;
-                    }
-                    inputs.Add("direction", value);
-                    i += 2;
-
-                } else if (flag == "--hex" || flag == "-h") {
-                    if (inputs.ContainsKey("view")) {
-                        // error: view already set
-                        showHelp();
-                        return;
-                    }
-
-                    inputs.Add("view", value);
+                    inputs.Add("direction", "forward");
                     i += 1;
 
-                } else if (flag == "--dec" || flag == "-d") {
+                } else if (sw == "--decimal" || sw == "-d") {
+                    // view decimal specified
                     if (inputs.ContainsKey("view")) {
                         // error: view already set
                         showHelp();
                         return;
                     }
 
-                    inputs.Add("view", value);
+                    inputs.Add("view", "decimal");
                     i += 1;
 
                 } else {
+                    // error: no flag match
                     showHelp();
                     return;
                 }
             }
+
+            if (!(inputs.ContainsKey("input"))) {
+                // error: input direction not specified
+                showHelp();
+                return;
+            }
+
 
             if (!(inputs.ContainsKey("direction"))) {
                 // if direction not specified, use default "reverse"
@@ -104,6 +98,7 @@ namespace CRC_32_CLI {
                 byte[] data = Encoding.UTF8.GetBytes(inputs["input"]);
                 uint crc;
 
+                // select divisor orientation
                 if (inputs["direction"] == "reverse") {
                     // reverse polynomial, LSB -> MSB
                     // (used in modern x86, serial comms, Gzip, Python, Go)
@@ -113,12 +108,12 @@ namespace CRC_32_CLI {
                     crc = CRC32String(data, 0x04C11DB7, false); // BZIP2, Ethernet
                 }
 
+                // select output format (hex or dec)
                 if (inputs["view"] == "hex") {
                     Console.WriteLine("0x{0:X}", crc);
                 } else {
                     Console.WriteLine(crc);
                 }
-
 
             } else {
                 // file mode
@@ -141,7 +136,6 @@ namespace CRC_32_CLI {
                     Console.WriteLine(crc);
                 }
             }
-
         }
 
 
@@ -241,9 +235,46 @@ namespace CRC_32_CLI {
             return input;
         }
 
-
         static void showHelp() {
-            Console.WriteLine("Usage: CRC-32 --input \"ABC\"");
+            const string usage = @"NAME
+CRC-32 CLI - Compute CRC-32 checksum
+
+Synopsis
+CRC-32 <FILE_INPUT> [-][SWITCH] <STRING_INPUT>
+
+Description
+A commandline interface for generating IEEE CRC-32 on a given file or string.
+
+Switches
+--text or -t
+    Compute checksum on a string input. 
+    Default is file-mode if this switch is not specified.
+
+--forward or -f
+    Compute the check using a forward divisor. 
+    Default is reverse divisor if this switch is not specified.
+
+--decimal or -d
+    Output the checksum in decimal format. 
+    Default is hexidecimal if this switch is not specified.
+
+
+Example 1
+CRC-32 -t ""ABC""
+    Compute the checksum on string ""ABC"" using the default reverse divisor. 
+    Show the checksum in default hexidecimal.
+
+Example 2
+CRC-32 file.mp3 -f
+    Compute the checksum on file ""file.mp3"" using the forward divisor.
+    Show the checksum in default hexidecimal.
+
+Example 3
+CRC-32 -t ""ABC"" -f -d
+    Compute the checksum on string ""ABC"" using the forward divisor. 
+    Show the checksum in decimal.";
+            Console.WriteLine(usage);
+            Console.ReadKey(true);
         }
     }
 }
