@@ -1,4 +1,4 @@
-# CRC-32 CLI
+# CRC-32 CLI ![Build](https://img.shields.io)
 
 Compute CRC-32 checksum forwards and backwards
 
