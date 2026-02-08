@@ -2,7 +2,7 @@
   "profiles": {
     "CRC-32 CLI": {
       "commandName": "Project",
-      "commandLineArgs": "--text \"Hello World!\" --direction reverse"
+      "commandLineArgs": "--text ABC"
     }
   }
 }
