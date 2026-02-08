@@ -4,20 +4,154 @@ using System.IO;
 using System.Text;
 
 namespace CRC_32_CLI {
-    internal class Program {
-        static void Main(string[] args) {
-
-            if (args.Length == 0 || (args.Length == 1 && (args[0] == "--help" || args[0] == "-h"))) {
-
-                showHelp();
-
+    internal class CRC32 {
+        private static uint nextCRC(uint b, uint crc, uint divisor, bool isReverse, uint[] lookup) {
+            if (isReverse) {
+                // fast crc based on shifting and lookup table
+                return lookup[(crc ^ b) & 0xFF] ^ (crc >> 8);
             } else {
-                parseInput(args);
+                uint index = ((crc >> 24) ^ b) & 0xFF;
+                return (crc << 8) ^ lookup[index];
             }
-
         }
 
-        static void parseInput(string[] args) {
+        static private uint CRCByte(uint input, uint divisor, bool isReverse) {
+
+            if (isReverse) {
+                for (int k = 8; k > 0; k--) {
+                    if ((input & 1) == 1) {
+                        input = (input >> 1) ^ divisor;
+                    } else {
+                        input >>= 1;
+                    }
+                }
+            } else {
+                input <<= 24;
+
+                for (int k = 8; k > 0; k--) {
+                    // check the most significant bit
+                    if ((input & 0x80000000) != 0) {
+                        input = (input << 1) ^ divisor;
+                    } else {
+                        input <<= 1;
+                    }
+                }
+            }
+
+            return input;
+        }
+
+        private static uint CRC32File(string fileName, uint divisor, bool isReverse) {
+            uint crc = 0xFFFFFFFF;
+
+            try {
+                // Use 'using' statement to ensure the FileStream is correctly disposed
+                using (FileStream fileStream = new FileStream(fileName, FileMode.Open, FileAccess.Read)) {
+                    int byteData;
+                    uint[] crcTable = new uint[256];
+
+                    // precompute crc table
+                    for (uint i = 0; i < 256; i++) {
+                        crcTable[i] = CRC32.CRCByte(i, divisor, isReverse);
+                    }
+
+                    // read a byte
+                    // the returned value is not -1 (end of file)
+                    while ((byteData = fileStream.ReadByte()) != -1) {
+
+                        byte b = (byte)byteData;
+
+                        crc = nextCRC(b, crc, divisor, isReverse, crcTable);
+                    }
+                }
+            } catch (FileNotFoundException) {
+                Console.WriteLine($"Error: The file '{fileName}' was not found.");
+            } catch (Exception ex) {
+                Console.WriteLine($"An error occurred: {ex.Message}");
+            }
+
+            // final mask
+            crc ^= 0xFFFFFFFF;
+
+            return crc;
+        }
+
+        private static uint CRC32String(byte[] data, uint divisor, bool isReverse) {
+            int length = data.Length;
+
+            uint[] crcTable = new uint[256];
+
+            // precompute crc table
+            for (uint i = 0; i < 256; i++) {
+                crcTable[i] = CRCByte(i, divisor, isReverse);
+            }
+
+            uint crc = 0xFFFFFFFF;
+
+            // fast crc based on shifting and lookup table
+            for (uint i = 0; i < data.Length; i++) {
+                crc = nextCRC(data[i], crc, divisor, isReverse, crcTable);
+            }
+
+            // final mask
+            crc ^= 0xFFFFFFFF;
+
+            return crc;
+        }
+
+        public static void showHelp() {
+            const string usage = @"NAME
+CRC-32 CLI - Compute CRC-32 checksum
+
+Synopsis
+CRC-32 <FILE_INPUT> [-][SWITCH] <STRING_INPUT>
+
+Description
+A commandline interface for generating IEEE CRC-32 on a given file or string.
+
+Switches
+--text or -t
+    Compute checksum on a string input. 
+    Default is file-mode if this switch is not specified.
+
+--forward or -f
+    Compute the check using a forward divisor. 
+    Default is reverse divisor if this switch is not specified.
+
+--decimal or -d
+    Output the checksum in decimal format. 
+    Default is hexidecimal if this switch is not specified.
+
+
+Example 1
+CRC-32 -t ""ABC""
+    Compute the checksum on string ""ABC"" using the default reverse divisor. 
+    Show the checksum in default hexidecimal.
+
+Example 2
+CRC-32 file.mp3 -f
+    Compute the checksum on file ""file.mp3"" using the forward divisor.
+    Show the checksum in default hexidecimal.
+
+Example 3
+CRC-32 -t ""ABC"" -f -d
+    Compute the checksum on string ""ABC"" using the forward divisor. 
+    Show the checksum in decimal.";
+            Console.WriteLine(usage);
+        }
+
+        public static void run(string[] args) {
+            if (args.Length == 0 || (args.Length == 1 && (args[0] == "--help" || args[0] == "-h"))) {
+
+                CRC32.showHelp();
+
+            } else {
+                CRC32.parseInput(args);
+            }
+        }
+
+
+        private static void parseInput(string[] args) {
 
             // input: text or file name
             // direction: "forward" or "reverse"
@@ -136,145 +270,6 @@ namespace CRC_32_CLI {
                     Console.WriteLine(crc);
                 }
             }
-        }
-
-
-        static uint nextCRC(uint b, uint crc, uint divisor, bool isReverse, uint[] lookup) {
-            if (isReverse) {
-                // fast crc based on shifting and lookup table
-                return lookup[(crc ^ b) & 0xFF] ^ (crc >> 8);
-            } else {
-                uint index = ((crc >> 24) ^ b) & 0xFF;
-                return (crc << 8) ^ lookup[index];
-            }
-        }
-
-
-        static uint CRC32File(string fileName, uint divisor, bool isReverse) {
-            uint crc = 0xFFFFFFFF;
-
-            try {
-                // Use 'using' statement to ensure the FileStream is correctly disposed
-                using (FileStream fileStream = new FileStream(fileName, FileMode.Open, FileAccess.Read)) {
-                    int byteData;
-                    uint[] crcTable = new uint[256];
-
-                    // precompute crc table
-                    for (uint i = 0; i < 256; i++) {
-                        crcTable[i] = CRCByte(i, divisor, isReverse);
-                    }
-
-                    // read a byte
-                    // the returned value is not -1 (end of file)
-                    while ((byteData = fileStream.ReadByte()) != -1) {
-
-                        byte b = (byte)byteData;
-
-                        crc = nextCRC(b, crc, divisor, isReverse, crcTable);
-                    }
-                }
-            } catch (FileNotFoundException) {
-                Console.WriteLine($"Error: The file '{fileName}' was not found.");
-            } catch (Exception ex) {
-                Console.WriteLine($"An error occurred: {ex.Message}");
-            }
-
-            // final mask
-            crc ^= 0xFFFFFFFF;
-
-            return crc;
-        }
-
-        static uint CRC32String(byte[] data, uint divisor, bool isReverse) {
-            int length = data.Length;
-
-            uint[] crcTable = new uint[256];
-
-            // precompute crc table
-            for (uint i = 0; i < 256; i++) {
-                crcTable[i] = CRCByte(i, divisor, isReverse);
-            }
-
-            uint crc = 0xFFFFFFFF;
-
-            // fast crc based on shifting and lookup table
-            for (uint i = 0; i < data.Length; i++) {
-                crc = nextCRC(data[i], crc, divisor, isReverse, crcTable);
-            }
-
-            // final mask
-            crc ^= 0xFFFFFFFF;
-
-            return crc;
-        }
-
-
-        static uint CRCByte(uint input, uint divisor, bool isReverse) {
-
-            if (isReverse) {
-                for (int k = 8; k > 0; k--) {
-                    if ((input & 1) == 1) {
-                        input = (input >> 1) ^ divisor;
-                    } else {
-                        input >>= 1;
-                    }
-                }
-            } else {
-                input <<= 24;
-
-                for (int k = 8; k > 0; k--) {
-                    // check the most significant bit
-                    if ((input & 0x80000000) != 0) {
-                        input = (input << 1) ^ divisor;
-                    } else {
-                        input <<= 1;
-                    }
-                }
-            }
-
-            return input;
-        }
-
-        static void showHelp() {
-            const string usage = @"NAME
-CRC-32 CLI - Compute CRC-32 checksum
-
-Synopsis
-CRC-32 <FILE_INPUT> [-][SWITCH] <STRING_INPUT>
-
-Description
-A commandline interface for generating IEEE CRC-32 on a given file or string.
-
-Switches
---text or -t
-    Compute checksum on a string input. 
-    Default is file-mode if this switch is not specified.
-
---forward or -f
-    Compute the check using a forward divisor. 
-    Default is reverse divisor if this switch is not specified.
-
---decimal or -d
-    Output the checksum in decimal format. 
-    Default is hexidecimal if this switch is not specified.
-
-
-Example 1
-CRC-32 -t ""ABC""
-    Compute the checksum on string ""ABC"" using the default reverse divisor. 
-    Show the checksum in default hexidecimal.
-
-Example 2
-CRC-32 file.mp3 -f
-    Compute the checksum on file ""file.mp3"" using the forward divisor.
-    Show the checksum in default hexidecimal.
-
-Example 3
-CRC-32 -t ""ABC"" -f -d
-    Compute the checksum on string ""ABC"" using the forward divisor. 
-    Show the checksum in decimal.";
-            Console.WriteLine(usage);
-            Console.ReadKey(true);
         }
     }
 }

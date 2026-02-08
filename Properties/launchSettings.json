@@ -1,7 +1,8 @@
 {
   "profiles": {
     "CRC-32 CLI": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "commandLineArgs": "-t ABC"
     }
   }
 }

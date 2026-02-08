@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36915.13 d17.14
+VisualStudioVersion = 17.14.36915.13
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CRC-32 CLI", "CRC-32 CLI.csproj", "{C1FCA6CE-A510-4F32-973C-DB0CE897D8AE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CRC-32-TestSuite", "..\CRC-32-TestSuite\CRC-32-TestSuite.csproj", "{E1EE134F-FC03-4FC4-8520-FF4DDD8341FC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{C1FCA6CE-A510-4F32-973C-DB0CE897D8AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C1FCA6CE-A510-4F32-973C-DB0CE897D8AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C1FCA6CE-A510-4F32-973C-DB0CE897D8AE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E1EE134F-FC03-4FC4-8520-FF4DDD8341FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E1EE134F-FC03-4FC4-8520-FF4DDD8341FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E1EE134F-FC03-4FC4-8520-FF4DDD8341FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E1EE134F-FC03-4FC4-8520-FF4DDD8341FC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
