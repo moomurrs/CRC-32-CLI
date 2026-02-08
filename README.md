@@ -1,5 +1,4 @@
-# CRC-32 CLI ![Build](https://img.shields.io/github/actions/workflow/status/moomurrs/CRC-32-CLI/dotnet.yml?branch=master&style=flat&logo=github) ![Tests](https://img.shields.io/github/actions/workflow/status/moomurrs/CRC-32-CLI/dotnet.yml?branch=master&style=flat&logo=github)
-
+# CRC-32 CLI ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/moomurrs/CRC-32-CLI/build.yml?branch=master&style=flat&logo=github&label=build%20status) ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/moomurrs/CRC-32-CLI/test.yml?branch=master&style=flat&logo=github&label=test%20suite)
 
 
 Compute CRC-32 checksum forwards and backwards
