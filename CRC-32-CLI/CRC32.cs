@@ -7,7 +7,8 @@ using System.Text;
 namespace CRC_32_CLI {
     public class CRC32 {
 
-        private static Dictionary<string, string> inputs;
+        private static Dictionary<string, string> inputs = new Dictionary<string, string>();
+        private static bool isText = false; // default file-mode
         private static uint nextCRC(uint b, uint crc, uint divisor, bool isReverse, uint[] lookup) {
             if (isReverse) {
                 // fast crc based on shifting and lookup table
@@ -144,8 +145,9 @@ CRC-32 -t ""ABC"" -f -d
         }
 
         public static string Run(string[] args, bool print = true) {
-            // initialize new dictionary for each calculation
+            // reset to blank state
             CRC32.inputs = new Dictionary<string, string>();
+            isText = false;
 
             if (args.Length == 0 || (args.Length == 1 && (args[0] == "--help" || args[0] == "-h" || args[0] == ""))) {
 
@@ -192,11 +194,13 @@ CRC-32 -t ""ABC"" -f -d
 
                 if (i == 0 && !(sw == "--text" || sw == "-t" || sw == "--forward" || sw == "-f" || sw == "--decimal" || sw == "-d")) {
                     // assuming file mode
-                    string fileName = "./" + sw;
+                    sw = args[i]; // retain original file name
+                    string baseDir = AppContext.BaseDirectory;
+                    string filePath = Path.Combine(baseDir, sw);
 
-                    if (File.Exists(fileName)) {
+                    if (File.Exists(filePath)) {
                         // file exists, proceed
-                        inputs.Add("input", fileName);
+                        inputs.Add("input", filePath);
                         i += 1;
                     } else {
                         // couldn't find file, fail early
@@ -215,6 +219,7 @@ CRC-32 -t ""ABC"" -f -d
                     }
                     string value = args[i + 1];
                     inputs.Add("input", value);
+                    isText = true; // mark input as text mode
                     i += 2;
 
                 } else if (sw == "--forward" || sw == "-f") {
@@ -266,7 +271,7 @@ CRC-32 -t ""ABC"" -f -d
         // calculate and return CRC-32 based on internal dictionary
         private static uint Calculate() {
             uint crc;
-            if (inputs["input"][0] != '.') {
+            if (isText) {
                 // text mode
 
                 byte[] data = Encoding.UTF8.GetBytes(inputs["input"]);
