@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace CRC_32_CLI {
-    internal class CRC32 {
+    public class CRC32 {
+
+        private static Dictionary<string, string> inputs;
         private static uint nextCRC(uint b, uint crc, uint divisor, bool isReverse, uint[] lookup) {
             if (isReverse) {
                 // fast crc based on shifting and lookup table
@@ -99,7 +102,7 @@ namespace CRC_32_CLI {
             return crc;
         }
 
-        public static void showHelp() {
+        public static void ShowHelp() {
             const string usage = @"NAME
 CRC-32 CLI - Compute CRC-32 checksum
 
@@ -140,23 +143,47 @@ CRC-32 -t ""ABC"" -f -d
             Console.WriteLine(usage);
         }
 
-        public static void run(string[] args) {
-            if (args.Length == 0 || (args.Length == 1 && (args[0] == "--help" || args[0] == "-h"))) {
+        public static string Run(string[] args, bool print = true) {
+            // initialize new dictionary for each calculation
+            CRC32.inputs = new Dictionary<string, string>();
 
-                CRC32.showHelp();
+            if (args.Length == 0 || (args.Length == 1 && (args[0] == "--help" || args[0] == "-h" || args[0] == ""))) {
+
+                if (print) {
+                    CRC32.ShowHelp();
+                }
+
+                return "";
 
             } else {
-                CRC32.parseInput(args);
+                string crcString = "";
+                if (CRC32.ParseInput(args)) {
+                    uint crc = CRC32.Calculate();
+
+
+                    if (inputs["view"] == "hex") {
+                        crcString = "0x" + crc.ToString("X");
+                    } else {
+                        crcString = crc.ToString();
+                    }
+
+                    return crcString;
+                }
+
+                if (print) {
+                    Console.WriteLine(crcString);
+                }
+
+                return crcString;
             }
         }
 
-
-        private static void parseInput(string[] args) {
+        // parse cli switches and store into member dictionary, return parse status
+        private static bool ParseInput(string[] args) {
 
             // input: text or file name
             // direction: "forward" or "reverse"
             // view: "hex" or "dec"
-            Dictionary<string, string> inputs = new Dictionary<string, string>();
 
             int i = 0;
 
@@ -165,16 +192,26 @@ CRC-32 -t ""ABC"" -f -d
 
                 if (i == 0 && !(sw == "--text" || sw == "-t" || sw == "--forward" || sw == "-f" || sw == "--decimal" || sw == "-d")) {
                     // assuming file mode
-                    string fileName = sw;
+                    string fileName = "./" + sw;
 
-                    inputs.Add("input", "./" + fileName);
-                    i += 1;
+                    if (File.Exists(fileName)) {
+                        // file exists, proceed
+                        inputs.Add("input", fileName);
+                        i += 1;
+                    } else {
+                        // couldn't find file, fail early
+                        return false;
+                    }
+
                 } else if (sw == "--text" || sw == "-t") {
                     // string mode specified
                     if (inputs.ContainsKey("input")) {
                         // error: input already set
-                        showHelp();
-                        return;
+                        return false;
+                    }
+                    if (i + 1 >= args.Length) {
+                        // 2nd parameter missing
+                        return false;
                     }
                     string value = args[i + 1];
                     inputs.Add("input", value);
@@ -184,8 +221,7 @@ CRC-32 -t ""ABC"" -f -d
                     // forward divisor specified
                     if (inputs.ContainsKey("direction")) {
                         // error: input already set
-                        showHelp();
-                        return;
+                        return false;
                     }
 
                     inputs.Add("direction", "forward");
@@ -195,8 +231,7 @@ CRC-32 -t ""ABC"" -f -d
                     // view decimal specified
                     if (inputs.ContainsKey("view")) {
                         // error: view already set
-                        showHelp();
-                        return;
+                        return false;
                     }
 
                     inputs.Add("view", "decimal");
@@ -204,15 +239,13 @@ CRC-32 -t ""ABC"" -f -d
 
                 } else {
                     // error: no flag match
-                    showHelp();
-                    return;
+                    return false;
                 }
             }
 
             if (!(inputs.ContainsKey("input"))) {
                 // error: input direction not specified
-                showHelp();
-                return;
+                return false;
             }
 
 
@@ -226,11 +259,17 @@ CRC-32 -t ""ABC"" -f -d
                 inputs.Add("view", "hex");
             }
 
+            // parse successful
+            return true;
+        }
+
+        // calculate and return CRC-32 based on internal dictionary
+        private static uint Calculate() {
+            uint crc;
             if (inputs["input"][0] != '.') {
                 // text mode
 
                 byte[] data = Encoding.UTF8.GetBytes(inputs["input"]);
-                uint crc;
 
                 // select divisor orientation
                 if (inputs["direction"] == "reverse") {
@@ -242,34 +281,24 @@ CRC-32 -t ""ABC"" -f -d
                     crc = CRC32String(data, 0x04C11DB7, false); // BZIP2, Ethernet
                 }
 
-                // select output format (hex or dec)
-                if (inputs["view"] == "hex") {
-                    Console.WriteLine("0x{0:X}", crc);
-                } else {
-                    Console.WriteLine(crc);
-                }
-
             } else {
                 // file mode
 
                 string data = inputs["input"];
-                uint crc;
 
                 if (inputs["direction"] == "reverse") {
-                    // reverse polynomial, LSB -> MSB
+                    // reverse polynomial (CRC-32/ISO-HDLC), LSB -> MSB
                     // (used in modern x86, serial comms, Gzip, Python, Go)
                     crc = CRC32File(data, 0xEDB88320, true);
                 } else {
-                    // forward "normal" polynomial, MSB -> LSB (used in MPEG2)
+                    // forward "normal" polynomial (CRC-32/BZIP2), MSB -> LSB
+                    // (used in MPEG2)
                     crc = CRC32File(data, 0x04C11DB7, false); // BZIP2, Ethernet
                 }
-
-                if (inputs["view"] == "hex") {
-                    Console.WriteLine("0x{0:X}", crc);
-                } else {
-                    Console.WriteLine(crc);
-                }
             }
+
+            return crc;
+
         }
     }
 }
