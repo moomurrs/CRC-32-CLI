@@ -44,7 +44,9 @@ namespace TestSuiteCRC32 {
 
         [Fact]
         public void FileTest() {
+            // check music file exists as prereq
             string fileName = "46_Olympus.wav";
+            Assert.True(File.Exists(fileName));
 
             // reverse divisor
             string[] command = { fileName };
